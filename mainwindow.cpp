@@ -5,6 +5,7 @@
 #include <string>
 #include <cctype>
 #include <cmath>
+#include <algorithm>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -116,11 +117,12 @@ std::vector<std::string> MainWindow::tokenize(const std::string &exp) {
         }
 
         else if (c == '+' || c == '*' || c == '/'
-                 || c == '^' || c == '(' || c == ')') {
+                 || c == '^') {
             if (!currentNumber.empty()) {
                 str.push_back(currentNumber);
                 currentNumber = "";
             }
+
             std::string op(1, c);
             str.push_back(op);
         }
@@ -136,6 +138,36 @@ std::vector<std::string> MainWindow::tokenize(const std::string &exp) {
                 }
                 std::string op(1, c);
                 str.push_back(op);
+            }
+        }
+
+        else if (c == '(') {
+            if (!currentNumber.empty()) {
+                str.push_back(currentNumber);
+                currentNumber = "";
+            }
+
+            if (i > 0 && (isdigit(exp[i - 1]) || exp[i - 1] == ')')) {
+                std::string op = "*";
+                str.push_back(op);
+            }
+
+            std::string op(1, c);
+            str.push_back(op);
+        }
+
+        else if (c == ')') {
+            if (!currentNumber.empty()) {
+                str.push_back(currentNumber);
+                currentNumber = "";
+            }
+
+            std::string op(1, c);
+            str.push_back(op);
+
+            if (i + 1 < exp.size() && (isdigit(exp[i + 1]) || exp[i + 1] == '(')) {
+                std::string hidden_op = "*";
+                str.push_back(hidden_op);
             }
         }
     }
@@ -159,7 +191,7 @@ std::vector<std::string> MainWindow::convertToRPN(const std::vector<std::string>
     for (int i = 0; i < tokens.size(); i++) {
         std::string token = tokens[i];
 
-        if ((isdigit(token[0]) || (token[0] == '-' && token.size() > 1)))
+        if (isdigit(token[0]) || (token.size() > 1 && isdigit(token[1])))
             rpn.push_back(token);
 
         else if (token == "(") {
@@ -172,7 +204,7 @@ std::vector<std::string> MainWindow::convertToRPN(const std::vector<std::string>
                 rpn.push_back(op);
                 operators.pop();
             }
-            operators.pop();
+            if (!operators.empty()) operators.pop();
         }
 
         else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
@@ -200,12 +232,15 @@ double MainWindow::calculateRPN(const std::vector<std::string> &rpn) {
     for (int i = 0; i < rpn.size(); i++) {
         std::string token = rpn[i];
 
-        if (isdigit(token[0]) || (token[0] == '-' && token.size() > 1)) {
-            std::replace(token.begin(), token.end(), ',', '.');
-            numbers.push(std::stod(token));
+        if (isdigit(token[0]) || (token.size() > 1 && isdigit(token[1]))) {
+            std::string tempToken = token;
+            std::replace(tempToken.begin(), tempToken.end(), ',', '.');
+            numbers.push(std::stod(tempToken));
         }
 
         else {
+            if (numbers.size() < 2) continue;
+
             double b = numbers.top();
             numbers.pop();
             double a = numbers.top();
@@ -214,46 +249,16 @@ double MainWindow::calculateRPN(const std::vector<std::string> &rpn) {
             if (token == "+") numbers.push(a + b);
             else if (token == "-") numbers.push(a - b);
             else if (token == "*") numbers.push(a * b);
-            else if (token == "/") numbers.push(a / b);
+            else if (token == "/") {
+                if (b != 0) numbers.push(a / b);
+                else numbers.push(0);
+            }
             else if (token == "^") numbers.push(pow(a, b));
         }
     }
-    return numbers.top();
+
+    if (!numbers.empty()) {
+        return numbers.top();
+    }
+    return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

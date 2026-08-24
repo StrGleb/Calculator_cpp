@@ -1,3 +1,4 @@
 build*/
 .shadow-build/
 *.user
+.DS_Store
