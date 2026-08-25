@@ -11,11 +11,18 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-add_executable(Calculator_cpp
+add_executable(Calculator MACOSX_BUNDLE
     main.cpp
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    AppIcon.icns
 )
 
-target_link_libraries(Calculator_cpp PRIVATE Qt6::Widgets)
+target_link_libraries(Calculator PRIVATE Qt6::Widgets)
+
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
+    set_source_files_properties(AppIcon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+endif()
+
